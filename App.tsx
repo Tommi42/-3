@@ -149,6 +149,8 @@ const App: React.FC = () => {
             iconCreateFunction={createClusterCustomIcon}
             maxClusterRadius={60}
             spiderfyOnMaxZoom={true}
+            spiderfyDistanceMultiplier={2.5}
+            showCoverageOnHover={false}
             // Use standard Leaflet event name in eventHandlers
             eventHandlers={{
               clustermouseover: (e: any) => {
@@ -179,7 +181,7 @@ const App: React.FC = () => {
       {/* Header / Title Overlay */}
       <div className="absolute top-0 left-0 w-full z-[1000] p-4 sm:p-6 pointer-events-none flex justify-center bg-gradient-to-b from-white/60 to-transparent">
         <h1 className="text-3xl sm:text-5xl font-handwriting text-rose-600 drop-shadow-sm pointer-events-auto bg-white/30 backdrop-blur-sm px-6 py-2 rounded-full border border-white/50">
-          Our Journey Together
+          Bachi bachi bachi
         </h1>
       </div>
 

@@ -26,7 +26,7 @@ export const MEMORIES: Memory[] = [
     imageUrl: "/images/6.png",
     videoUrl: "/images/1.mp4"
   },
-    {
+  {
     id: '4',
     title: "Sleepover time!!!",
     description: "Too fun to sleep",
@@ -34,7 +34,7 @@ export const MEMORIES: Memory[] = [
     location: { lat: 41.14400949343178, lng: -8.609892797698134 },
     imageUrl: "/images/12.png"
   },
-      {
+  {
     id: '5',
     title: "Primo aperitivo ;)",
     description: "Moments get better with you",
@@ -50,8 +50,8 @@ export const MEMORIES: Memory[] = [
     location: { lat: 41.14400949343178, lng: -8.609892797698134 },
     imageUrl: "/images/2.jpg"
   },
-    {
-    id: '6',
+  {
+    id: '7',
     title: "Falling hard for you ",
     description: "",
     date: "2025-07-14",
@@ -60,16 +60,16 @@ export const MEMORIES: Memory[] = [
   },
 
   {
-    id: '7',
+    id: '8',
     title: "Sleepy girl again",
     description: "I was kinda unconfy, but I could not desire a better place to be",
     date: "2025-07-24",
     location: { lat: 39.971353, lng: -8.641322 },
     imageUrl: "/images/3.jpg"
   },
-   
-    {
-    id: '6',
+
+  {
+    id: '9',
     title: "Sleepy girl again",
     description: "I was kinda unconfy, but I could not desire a better place to be",
     date: "2025-07-24",
