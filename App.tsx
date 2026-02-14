@@ -106,7 +106,7 @@ const App: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [handleNext, handlePrev]);
 
   // Calculate polyline coordinates from memories
   const pathCoordinates = MEMORIES.map(m => [m.location.lat, m.location.lng] as [number, number]);
