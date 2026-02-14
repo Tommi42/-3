@@ -331,6 +331,6 @@ export const MEMORIES: Memory[] = [
     description: "Ti amo tanto Abi. ",
     date: "--->",
     location: { lat: 39.01664656882862, lng: -45.46348572792339 },
-    imageUrl: "/images/44.png",
+    imageUrl: "/images/44.jpg",
   },
 ];
