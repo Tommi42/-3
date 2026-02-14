@@ -119,7 +119,7 @@ export const MEMORIES: Memory[] = [
     {
     id: '13',
     title: "Summer forever",
-    description: "No more photos, just memories",
+    description: "Just memories",
     date: "2025-08-15",
     location: { lat: 45.05525890943701, lng: 7.688464713732149 },
     imageUrl: "/images/18.jpg"
