@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -29,71 +29,62 @@ const createPhotoIcon = (imageUrl: string, isActive: boolean) => {
   });
 };
 
+// Internal component to handle map clicks
+const MapClickHandler = ({ onClick }: { onClick: () => void }) => {
+  useMapEvents({
+    click: onClick,
+  });
+  return null;
+};
+
 const App: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [hoveredMemory, setHoveredMemory] = useState<Memory | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // We can derive the memory to show from currentIndex
   const currentMemory = MEMORIES[currentIndex];
+  // Check if we are in "World View"
   const isWorldView = !hasInteracted || currentIndex === MEMORIES.length;
 
   const handleNext = () => {
     if (!hasInteracted) {
       setHasInteracted(true);
+      setIsPanelOpen(true); // Open panel on first interaction
       return;
     }
-    setCurrentIndex((prev) => (prev + 1) % (MEMORIES.length + 1));
-  };
 
+    setCurrentIndex((prev) => {
+      const nextIndex = (prev + 1) % (MEMORIES.length + 1);
+      // Close panel if we reach World View
+      if (nextIndex === MEMORIES.length) {
+        setIsPanelOpen(false);
+      } else {
+        setIsPanelOpen(true);
+      }
+      return nextIndex;
+    });
+  };
 
   const handlePrev = () => {
     setHasInteracted(true);
-    setCurrentIndex((prev) => (prev - 1 + (MEMORIES.length + 1)) % (MEMORIES.length + 1));
+    setCurrentIndex((prev) => {
+      const nextIndex = (prev - 1 + (MEMORIES.length + 1)) % (MEMORIES.length + 1);
+      // Close panel if we reach World View
+      if (nextIndex === MEMORIES.length) {
+        setIsPanelOpen(false);
+      } else {
+        setIsPanelOpen(true);
+      }
+      return nextIndex;
+    });
   };
-
 
   const goToMemory = (index: number) => {
     setHasInteracted(true);
     setCurrentIndex(index);
+    setIsPanelOpen(true);
   };
-
-  // Interaction handlers with delay for smooth transition
-  const handleMarkerEnter = (memory: Memory) => {
-    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-
-    // Add delay before opening to prevent accidental triggers
-    openTimeoutRef.current = setTimeout(() => {
-      setHoveredMemory(memory);
-    }, 500); // 500ms delay
-  };
-
-  const handleMarkerLeave = () => {
-    if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-
-    closeTimeoutRef.current = setTimeout(() => {
-      setHoveredMemory(null);
-    }, 300); // 300ms grace period to move to overlay
-  };
-
-  const handleOverlayEnter = () => {
-    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-  };
-
-  const handleOverlayLeave = () => {
-    closeTimeoutRef.current = setTimeout(() => {
-      setHoveredMemory(null);
-    }, 300);
-  };
-
-  // Clean up timeout
-  useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-      if (openTimeoutRef.current) clearTimeout(openTimeoutRef.current);
-    };
-  }, []);
 
   // Keyboard Navigation
   useEffect(() => {
@@ -103,7 +94,7 @@ const App: React.FC = () => {
       } else if (e.key === 'ArrowRight') {
         handleNext();
       } else if (e.key === 'Escape') {
-        setHoveredMemory(null);
+        setIsPanelOpen(false);
       }
     };
 
@@ -124,10 +115,79 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="relative w-full h-full bg-rose-50 overflow-hidden">
+    <div className="relative w-full h-full bg-rose-50 overflow-hidden flex">
 
-      {/* Map Container */}
-      <div className="absolute inset-0 z-0">
+      {/* Side Panel (Left) */}
+      <AnimatePresence>
+        {isPanelOpen && !isWorldView && currentMemory && (
+          <motion.div
+            initial={{ x: -400, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -400, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="absolute top-4 left-4 bottom-4 w-auto min-w-[380px] max-w-[75vw] z-[500] bg-white shadow-2xl flex flex-col overflow-hidden rounded-3xl"
+          >
+            {/* Close Button (Mobile helper) */}
+            <button
+              onClick={() => setIsPanelOpen(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/30 text-white rounded-full transition-colors backdrop-blur-md"
+            >
+              <X size={20} />
+            </button>
+
+            {/* Scrollable Container */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
+              {/* Image / Video Section - Fixed Height to drive width */}
+              <div className="h-[55vh] bg-black flex items-center justify-center shrink-0">
+                {currentMemory.videoUrl ? (
+                  <video
+                    src={currentMemory.videoUrl}
+                    className="h-full w-auto max-w-full object-contain"
+                    autoPlay
+                    controls
+                    loop
+                    poster={currentMemory.imageUrl}
+                  />
+                ) : (
+                  <img
+                    src={currentMemory.imageUrl}
+                    alt={currentMemory.title}
+                    className="h-full w-auto max-w-full object-contain"
+                  />
+                )}
+              </div>
+
+              {/* Content Section */}
+              <div className="p-6 flex flex-col gap-4">
+                <h2 className="text-4xl font-handwriting text-rose-600 leading-tight">
+                  {currentMemory.title}
+                </h2>
+
+                <div className="flex flex-col gap-2 text-sm text-gray-500 font-medium">
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} className="text-rose-400" />
+                    <span>{new Date(currentMemory.date).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} className="text-rose-400" />
+                    <span>{currentMemory.location.lat.toFixed(4)}, {currentMemory.location.lng.toFixed(4)}</span>
+                  </div>
+                </div>
+
+                <div className="w-full h-px bg-rose-100 my-2" />
+
+                <p className="text-gray-700 leading-relaxed font-light text-lg">
+                  {currentMemory.description}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+      {/* Map Container (Takes remaining space) */}
+      <div className="flex-1 w-full h-full relative z-0">
         <MapContainer
           center={[20, 0]}
           zoom={2}
@@ -136,6 +196,8 @@ const App: React.FC = () => {
           className="w-full h-full outline-none"
           style={{ height: '100%', width: '100%', background: 'transparent' }}
         >
+          <MapClickHandler onClick={() => setIsPanelOpen(false)} />
+
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
@@ -179,11 +241,8 @@ const App: React.FC = () => {
                 icon={createPhotoIcon(memory.imageUrl, index === currentIndex)}
                 eventHandlers={{
                   click: () => {
-                    goToMemory(index);
-                    setHoveredMemory(memory); // Open overlay on click (mobile support)
-                  },
-                  mouseover: () => handleMarkerEnter(memory),
-                  mouseout: handleMarkerLeave
+                    goToMemory(index); // This handles setting panel open
+                  }
                 }}
                 zIndexOffset={index === currentIndex ? 1000 : 0}
               />
@@ -192,89 +251,15 @@ const App: React.FC = () => {
         </MapContainer>
       </div>
 
-      {/* Header / Title Overlay */}
-      <div className="absolute top-0 left-0 w-full z-[1000] p-4 sm:p-6 pointer-events-none flex justify-center bg-gradient-to-b from-white/60 to-transparent">
-        <h1 className="text-3xl sm:text-5xl font-handwriting text-rose-600 drop-shadow-sm pointer-events-auto bg-white/30 backdrop-blur-sm px-6 py-2 rounded-full border border-white/50">
+      {/* Header / Title Overlay - Centered or shifted? Let's keep it centered on screen for now */}
+      <div className={`absolute top-0 left-0 w-full z-[1000] p-4 sm:p-6 pointer-events-none flex justify-center transition-all duration-500 ${isPanelOpen && !isWorldView ? 'pl-[37.5%]' : ''}`}>
+        <h1 className="text-2xl sm:text-4xl font-handwriting text-rose-600 drop-shadow-sm pointer-events-auto bg-white/30 backdrop-blur-sm px-6 py-2 rounded-full border border-white/50 text-center">
           {currentIndex === MEMORIES.length
             ? "Where we are gonna dance next?"
             : "Dancing together around the world"
           }
         </h1>
       </div>
-
-      {/* Full Screen Overlay on Hover */}
-      <AnimatePresence>
-        {hoveredMemory && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 z-[2000] flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] p-4 sm:p-8 cursor-pointer"
-            onClick={() => setHoveredMemory(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full max-w-4xl max-h-[80vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row pointer-events-auto cursor-auto"
-              onMouseEnter={handleOverlayEnter}
-              onMouseLeave={handleOverlayLeave}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Close Button (Mobile/Desktop helper) */}
-              <button
-                onClick={() => setHoveredMemory(null)}
-                className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors md:hidden"
-              >
-                <X size={20} />
-              </button>
-
-              {/* Image / Video Section */}
-              <div className="w-full md:w-2/3 h-64 md:h-auto relative bg-gray-100 flex items-center justify-center bg-black">
-                {hoveredMemory.videoUrl ? (
-                  <video
-                    src={hoveredMemory.videoUrl}
-                    className="w-full h-full object-contain"
-                    autoPlay
-                    controls
-                    loop
-                    // muted // Autoplay often requires muted, but user might want sound. Let's try without first, or add a toggle.
-                    poster={hoveredMemory.imageUrl}
-                  />
-                ) : (
-                  <img
-                    src={hoveredMemory.imageUrl}
-                    alt={hoveredMemory.title}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </div>
-
-              {/* Content Section */}
-              <div className="w-full md:w-1/3 p-6 md:p-8 flex flex-col justify-center bg-white/95 backdrop-blur">
-                <h2 className="text-3xl font-handwriting text-rose-600 mb-4">{hoveredMemory.title}</h2>
-
-                <div className="flex items-center gap-4 text-sm text-gray-500 font-medium mb-6">
-                  <div className="flex items-center gap-1">
-                    <Calendar size={16} className="text-rose-400" />
-                    <span>{new Date(hoveredMemory.date).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MapPin size={16} className="text-rose-400" />
-                    <span>{hoveredMemory.location.lat.toFixed(2)}, {hoveredMemory.location.lng.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <p className="text-gray-700 leading-relaxed font-light text-lg">
-                  {hoveredMemory.description}
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Navigation Controls (Bottom Right) */}
       <div className="absolute bottom-8 right-8 z-[1000] flex gap-3 pointer-events-auto">
@@ -296,7 +281,6 @@ const App: React.FC = () => {
       </div>
     </div>
   );
-
 };
 
 export default App;
