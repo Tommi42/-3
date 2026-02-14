@@ -4,9 +4,10 @@ import { Location } from '../types';
 
 interface MapControllerProps {
   location: Location;
+  active?: boolean;
 }
 
-const MapController: React.FC<MapControllerProps> = ({ location }) => {
+const MapController: React.FC<MapControllerProps> = ({ location, active = true }) => {
   const map = useMap();
 
   // FIX: Force Leaflet to re-calculate container size.
@@ -24,7 +25,7 @@ const MapController: React.FC<MapControllerProps> = ({ location }) => {
   }, [map]);
 
   useEffect(() => {
-    if (location) {
+    if (location && active) {
       const currentZoom = map.getZoom();
       const targetZoom = Math.max(currentZoom, 16); // Don't zoom out if user is already deep in
 
@@ -34,7 +35,7 @@ const MapController: React.FC<MapControllerProps> = ({ location }) => {
         easeLinearity: 0.25
       });
     }
-  }, [location, map]);
+  }, [location, map, active]);
 
   return null;
 };

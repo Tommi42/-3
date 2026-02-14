@@ -32,20 +32,27 @@ const createPhotoIcon = (imageUrl: string, isActive: boolean) => {
 const App: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hoveredMemory, setHoveredMemory] = useState<Memory | null>(null);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const openTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const currentMemory = MEMORIES[currentIndex];
 
   const handleNext = () => {
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      return;
+    }
     setCurrentIndex((prev) => (prev + 1) % MEMORIES.length);
   };
 
   const handlePrev = () => {
+    setHasInteracted(true);
     setCurrentIndex((prev) => (prev - 1 + MEMORIES.length) % MEMORIES.length);
   };
 
   const goToMemory = (index: number) => {
+    setHasInteracted(true);
     setCurrentIndex(index);
   };
 
@@ -119,8 +126,8 @@ const App: React.FC = () => {
       {/* Map Container */}
       <div className="absolute inset-0 z-0">
         <MapContainer
-          center={[currentMemory.location.lat, currentMemory.location.lng]}
-          zoom={16}
+          center={[20, 0]}
+          zoom={2}
           scrollWheelZoom={true}
           zoomControl={false}
           className="w-full h-full outline-none"
@@ -131,7 +138,10 @@ const App: React.FC = () => {
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
 
-          <MapController location={currentMemory.location} />
+          <MapController
+            location={currentMemory.location}
+            active={hasInteracted}
+          />
 
           <Polyline
             positions={pathCoordinates}
@@ -181,7 +191,7 @@ const App: React.FC = () => {
       {/* Header / Title Overlay */}
       <div className="absolute top-0 left-0 w-full z-[1000] p-4 sm:p-6 pointer-events-none flex justify-center bg-gradient-to-b from-white/60 to-transparent">
         <h1 className="text-3xl sm:text-5xl font-handwriting text-rose-600 drop-shadow-sm pointer-events-auto bg-white/30 backdrop-blur-sm px-6 py-2 rounded-full border border-white/50">
-         Dancing together around the world
+          Dancing together around the world
         </h1>
       </div>
 
