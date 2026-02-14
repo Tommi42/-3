@@ -286,7 +286,7 @@ export const MEMORIES: Memory[] = [
     title: "<3",
     description: "We still never lose laughing",
     date: "2026-01-13",
-    location: { lat: 27.942362167672105, lng: -45.46348572792339 },
+    location: { lat: 39.01664656882862, lng: -45.46348572792339 },
     imageUrl: "/images/41.png",
   },
 ];
